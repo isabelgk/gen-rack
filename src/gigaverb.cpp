@@ -5,42 +5,84 @@
 /// Processing
 
 struct Gigaverb : Module {
-	CommonState *module_state;
-	int currentPolyphony = 1;
+	CommonState *moduleState;
+	long numins;
+	long numouts;
+	t_sample **inputBuffers;  // access like: buffer[sample #][numins]
+	t_sample **outputBuffers;
 
 	Gigaverb() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
 		// and update it later if needed
-		module_state = (CommonState *)gigaverb::create(44100, 1);
-		gigaverb::reset(module_state);
+		moduleState = (CommonState *)gigaverb::create(44100, 1);
+		gigaverb::reset(moduleState);
 
-		config(gigaverb::num_params(), gigaverb::num_inputs(), gigaverb::num_outputs(), 0);
+		numins = gigaverb::num_inputs();
+		numouts = gigaverb::num_outputs();
+
+		// Initialize sample buffers
+		// TODO - do block sample processing
+		allocBuffers(1);
 
 		// Configure parameters
+		config(gigaverb::num_params(), numins, numouts, 0);
 		for (int i = 0; i < gigaverb::num_params(); i++) {
-			std::string name = std::string(gigaverb::getparametername(module_state, i));
-			std::string units = std::string(gigaverb::getparameterunits(module_state, i));
+			std::string name = std::string(gigaverb::getparametername(moduleState, i));
+			std::string units = std::string(gigaverb::getparameterunits(moduleState, i));
 			float min = 0.0;
 			float max = 1.0;
-			if (gigaverb::getparameterhasminmax(module_state, i)) {
-				min = gigaverb::getparametermin(module_state, i);
-				max = gigaverb::getparametermax(module_state, i);
+			if (gigaverb::getparameterhasminmax(moduleState, i)) {
+				min = gigaverb::getparametermin(moduleState, i);
+				max = gigaverb::getparametermax(moduleState, i);
 			}
 			configParam(i, min, max, min, name, units);
 		}
 	}
 
 	~Gigaverb() {
-		gigaverb::destroy(module_state);
+		gigaverb::destroy(moduleState);
+		deleteBuffers();
+	}
+
+	void allocBuffers(long bufferSize) {
+		inputBuffers = new t_sample *[numins];
+		for (int i = 0; i < numins; i++) {
+			inputBuffers[i] = new t_sample[bufferSize];
+		}
+		outputBuffers = new t_sample *[numouts];
+		for (int i = 0; i < numouts; i++) {
+			outputBuffers[i] = new t_sample[bufferSize];
+		}
+	}
+
+	void deleteBuffers() {
+		for (int i = 0; i < numins; i++) {
+			delete[] inputBuffers[i];
+		}
+		delete[] inputBuffers;
+
+		for (int i = 0; i < numouts; i++) {
+			delete[] outputBuffers[i];
+		}
+		delete[] outputBuffers;
 	}
 
 	void process(const ProcessArgs& args) override {
-		currentPolyphony = std::max(1, inputs[0].getChannels());
-		for (int c = 0; c < currentPolyphony; c++) {
-			
-			for (int i = 0; i < gigaverb::num_outputs(); i++) {
-				outputs[i].setVoltage()
+		// Fill input buffers
+		for (int i = 0; i < numins; i++) {
+			if (inputs[i].isConnected()) {
+				inputBuffers[0][i] = inputs[i].getVoltage(0) / 5.f;
+			} else {
+				inputBuffers[0][i] = 0.f;
 			}
+		}
+
+		// Process
+		gigaverb::perform(moduleState, inputBuffers, numins, outputBuffers, numouts, 1);
+
+		// Send out
+		for (int i = 0; i < numouts; i++) {
+			outputs[i].setVoltage(outputBuffers[0][i] * 5.f, 0);
 		}
 	}
 };
@@ -124,7 +166,7 @@ struct GigaverbWidget : ModuleWidget {
 		addChild(panel);
 
 		float margin = unit / 2;
-		float x_spacing = unit * (hp - 1) / 4;
+		// float x_spacing = unit * (hp - 1) / 4;
 
 		// screws
 		addChild(createWidget<ScrewSilver>(Vec(unit, 0)));
@@ -140,7 +182,7 @@ struct GigaverbWidget : ModuleWidget {
 		int num_inputs = gigaverb::num_inputs() <= 2 ? gigaverb::num_inputs() : 2;
 		int num_outputs = gigaverb::num_outputs() <= 2 ? gigaverb::num_outputs() : 2;
 		float io_spacing = (box.size.x - unit) / (num_inputs + num_outputs);
-		for (int i = 0; i < num_inputs; i++) {
+		for (int i = 0; i < gigaverb::num_inputs(); i++) {
 			addInput(createInputCentered<PJ301MPort>(Vec(margin + port_rad + io_spacing * i, box.size.y - unit * 2.5), module, i));
 		}
 		for (int i = 0; i < gigaverb::num_outputs(); i++) {

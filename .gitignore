@@ -3,3 +3,4 @@ build/
 dep/
 dist/
 gen/exports/*
+*.dll
