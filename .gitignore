@@ -1,0 +1,5 @@
+.vscode/
+build/
+dep/
+dist/
+gen/exports/*
