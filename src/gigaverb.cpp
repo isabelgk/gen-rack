@@ -6,10 +6,13 @@
 
 struct Gigaverb : Module {
 	CommonState *moduleState;
-	long numins;
-	long numouts;
-	t_sample **inputBuffers;  // access like: buffer[sample #][numins]
+	t_sample **inputBuffers;  // access like: buffer[sample #][numInputs]
 	t_sample **outputBuffers;
+
+	int numParams;
+	int numInputs;
+	int numOutputs;
+
 
 	Gigaverb() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
@@ -17,15 +20,16 @@ struct Gigaverb : Module {
 		moduleState = (CommonState *)gigaverb::create(44100, 1);
 		gigaverb::reset(moduleState);
 
-		numins = gigaverb::num_inputs();
-		numouts = gigaverb::num_outputs();
-
 		// Initialize sample buffers
 		// TODO - do block sample processing
 		allocBuffers(1);
 
+		numParams = gigaverb::num_params();
+		numInputs = gigaverb::num_inputs();
+		numOutputs = gigaverb::num_outputs();
+
 		// Configure parameters
-		config(gigaverb::num_params(), numins, numouts, 0);
+		config(gigaverb::num_params(), numInputs, numOutputs, 0);
 		for (int i = 0; i < gigaverb::num_params(); i++) {
 			std::string name = std::string(gigaverb::getparametername(moduleState, i));
 			std::string units = std::string(gigaverb::getparameterunits(moduleState, i));
@@ -45,23 +49,23 @@ struct Gigaverb : Module {
 	}
 
 	void allocBuffers(long bufferSize) {
-		inputBuffers = new t_sample *[numins];
-		for (int i = 0; i < numins; i++) {
+		inputBuffers = new t_sample *[numInputs];
+		for (int i = 0; i < numInputs; i++) {
 			inputBuffers[i] = new t_sample[bufferSize];
 		}
-		outputBuffers = new t_sample *[numouts];
-		for (int i = 0; i < numouts; i++) {
+		outputBuffers = new t_sample *[numOutputs];
+		for (int i = 0; i < numOutputs; i++) {
 			outputBuffers[i] = new t_sample[bufferSize];
 		}
 	}
 
 	void deleteBuffers() {
-		for (int i = 0; i < numins; i++) {
+		for (int i = 0; i < numInputs; i++) {
 			delete[] inputBuffers[i];
 		}
 		delete[] inputBuffers;
 
-		for (int i = 0; i < numouts; i++) {
+		for (int i = 0; i < numOutputs; i++) {
 			delete[] outputBuffers[i];
 		}
 		delete[] outputBuffers;
@@ -69,7 +73,7 @@ struct Gigaverb : Module {
 
 	void process(const ProcessArgs& args) override {
 		// Fill input buffers
-		for (int i = 0; i < numins; i++) {
+		for (int i = 0; i < numInputs; i++) {
 			if (inputs[i].isConnected()) {
 				inputBuffers[0][i] = inputs[i].getVoltage(0) / 5.f;
 			} else {
@@ -78,10 +82,10 @@ struct Gigaverb : Module {
 		}
 
 		// Process
-		gigaverb::perform(moduleState, inputBuffers, numins, outputBuffers, numouts, 1);
+		gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, 1);
 
 		// Send out
-		for (int i = 0; i < numouts; i++) {
+		for (int i = 0; i < numOutputs; i++) {
 			outputs[i].setVoltage(outputBuffers[0][i] * 5.f, 0);
 		}
 	}
@@ -145,51 +149,57 @@ struct TextDisplay : TransparentWidget {
 /// Main module UI
 
 struct GigaverbWidget : ModuleWidget {
+	// Each column of ports has a certain number of "cells" that contain a port and label. 
+	int ports_per_col = 6;
+
+	// Each column of params has a certain number of "cells" that contain a port, a label, and a knob.
+	int params_per_col = 4;
+	
+	// Box off the actual section of "cells" with a margin
+	int l_margin = RACK_GRID_WIDTH;
+	int r_margin = RACK_GRID_WIDTH;
+	int bot_margin = 2 * RACK_GRID_WIDTH;
+	// The title and top margin together make up the top band of margin
+	int top_margin = RACK_GRID_WIDTH;
+	int h_title = 3 * RACK_GRID_WIDTH;
+	// The height of the actual part that will contain ports and knobs
+	int active_box_height = RACK_GRID_HEIGHT - bot_margin - h_title - top_margin;
+
+	// A column will take up 3HP
+	int w_col = 3 * RACK_GRID_WIDTH;
+
+	// Offset from the top of a cell to the knobs, ports, and labels
+	int port_center_offset = active_box_height / ports_per_col * (1 / 3);
+	int label_port_offset = active_box_height / ports_per_col * (3 / 4);
+	int param_knob_center_offset = active_box_height / params_per_col * (1 / 4);
+	int param_port_center_offset = active_box_height / params_per_col * (1 / 2);
+	int param_label_offset = active_box_height / params_per_col * (4 / 5);
+
+	int module_hp;
+	
 	Panel* panel;
 
 	GigaverbWidget(Gigaverb* module) {
-		int unit = RACK_GRID_WIDTH;
-		float port_rad = 15.79;  // pixels
-	
-		// Fit three params vertically on 3HP
-		int num_params = gigaverb::num_params();
-		int hp = num_params;
-		if (num_params % 3) {
-			hp = int(num_params / 3) * 3;
-			hp += 3;
-		}
-
-		// background/panel
 		setModule(module);
-		box.size = Vec(unit * hp, RACK_GRID_HEIGHT);
-		panel = new Panel(55, 71, 79);
-		addChild(panel);
 
-		float margin = unit / 2;
-		// float x_spacing = unit * (hp - 1) / 4;
+		if (module) {
+			module_hp = 2 + 3 * (std::ceil(module->numInputs / ports_per_col) 
+						  + std::ceil(module->numOutputs / ports_per_col)
+						  + std::ceil(module->numParams / params_per_col));
+
+			TextDisplay *title = new TextDisplay(box.size.x / 2, top_margin, box.size.x, "gigaverb");
+			addChild(title);
+
+			box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
+			panel = new Panel(55, 71, 79);
+			addChild(panel);
+		}
 
 		// screws
-		addChild(createWidget<ScrewSilver>(Vec(unit, 0)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(unit, 365)));
+		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 365)));
 		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 365)));
-
-		// title
-		TextDisplay *title = new TextDisplay(box.size.x / 2, unit, box.size.x, "gigaverb");
-		addChild(title);
-
-		// input/output ports (for now, force to be <= 2)
-		int num_inputs = gigaverb::num_inputs() <= 2 ? gigaverb::num_inputs() : 2;
-		int num_outputs = gigaverb::num_outputs() <= 2 ? gigaverb::num_outputs() : 2;
-		float io_spacing = (box.size.x - unit) / (num_inputs + num_outputs);
-		for (int i = 0; i < gigaverb::num_inputs(); i++) {
-			addInput(createInputCentered<PJ301MPort>(Vec(margin + port_rad + io_spacing * i, box.size.y - unit * 2.5), module, i));
-		}
-		for (int i = 0; i < gigaverb::num_outputs(); i++) {
-			addOutput(createOutputCentered<PJ301MPort>(Vec(margin + port_rad + io_spacing * (i + num_inputs), box.size.y - unit * 2.5), module, i));
-		}
-
-		// parameters and CV inputs
 	}
 
 	void step() override {
