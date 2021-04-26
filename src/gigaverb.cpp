@@ -131,7 +131,7 @@ struct TextDisplay : TransparentWidget {
 	NVGcolor _color;
 	int _fs;
 
-	TextDisplay(float x, float y, float w, const char* text, NVGcolor color = nvgRGB(236, 239, 241), int fs = 16) {
+	TextDisplay(float x, float y, float w, const char* text, NVGcolor color = nvgRGB(230, 230, 230), int fs = 16) {
 		_x = x;
 		_y = y;
 		_w = w;
@@ -182,11 +182,11 @@ struct GigaverbWidget : ModuleWidget {
 	int w_col = 3 * RACK_GRID_WIDTH;
 
 	// Offset from the top of a cell to the knobs, ports, and labels
-	int port_center_offset = active_box_height / ports_per_col * (1 / 3);
-	int label_port_offset = active_box_height / ports_per_col * (3 / 4);
-	int param_knob_center_offset = active_box_height / params_per_col * (1 / 4);
-	int param_port_center_offset = active_box_height / params_per_col * (1 / 2);
-	int param_label_offset = active_box_height / params_per_col * (4 / 5);
+	float port_center_offset = active_box_height / ports_per_col * 0.25f;
+	float label_port_offset = active_box_height / ports_per_col * 0.55f;
+	float param_knob_center_offset = active_box_height / params_per_col * (1 / 4);
+	float param_port_center_offset = active_box_height / params_per_col * (1 / 2);
+	float param_label_offset = active_box_height / params_per_col * (4 / 5);
 
 	int module_hp = 8;
 	
@@ -198,18 +198,21 @@ struct GigaverbWidget : ModuleWidget {
 		setModule(module);
 		box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
 
+		// TODO: placeholder background
+
 		if (module) {
-			// Make these publically accessible to the widget 
+			// Make these publically accessible to the widget
 			numInputs = module->numInputs;
 			numOutputs = module->numOutputs;
 			numParams = module->numParams;
 
 			// Figure out the width of the module
-			module_hp = 2 + 3 * (std::ceil(numInputs / ports_per_col) 
-						  + std::ceil(numOutputs / ports_per_col)
-						  + std::ceil(numParams / params_per_col));
+			module_hp = 2 + 3 * (std::ceil((float)numInputs / (float)ports_per_col) 
+						  + std::ceil((float)numOutputs / (float)ports_per_col)
+						  + std::ceil((float)numParams / (float)params_per_col));
 
 			box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
+			DEBUG("HP = %d", module_hp);
 
 			// Draw on the next step
 			dirty = true;
@@ -223,7 +226,7 @@ struct GigaverbWidget : ModuleWidget {
 		// The widget will be dirtied after the module is registered in the constructor
 		if (dirty) {
 			// Background panel
-			panel = new Panel(55, 71, 79);
+			panel = new Panel(40, 40, 40);
 			addChild(panel);
 			panel->box.size = box.size;
 
@@ -238,7 +241,28 @@ struct GigaverbWidget : ModuleWidget {
 			addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 365)));
 
 			// PORTS, PARAMS, LABELS
+			for (int i = 0; i < numInputs; i++) {
+				float left_x = l_margin + (float)(i / ports_per_col) * w_col;
+				float center_x = left_x + w_col / 2;
+
+				float top_y = top_margin + h_title + (i % ports_per_col) * (active_box_height / ports_per_col);
+				float port_center_y = top_y + port_center_offset;
+				float label_center_y = top_y + label_port_offset;
+
+				addInput(createInputCentered<PJ301MPort>(Vec(center_x, port_center_y), module, i));
+				TextDisplay *label = new TextDisplay(center_x, label_center_y, left_x, "test", nvgRGB(230, 230, 230), 10);
+				addChild(label);
+			}
 			
+			for (int i = 0; i < numParams; i++) {
+				
+			}
+			
+			for (int i = 0; i < numOutputs; i++) {
+				
+			}
+
+			dirty = false;
 		}
 
 		ModuleWidget::step();
