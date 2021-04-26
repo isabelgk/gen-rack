@@ -20,17 +20,18 @@ struct Gigaverb : Module {
 		moduleState = (CommonState *)gigaverb::create(44100, 1);
 		gigaverb::reset(moduleState);
 
+		numParams = gigaverb::num_params();
+		numInputs = gigaverb::num_inputs();
+		numOutputs = gigaverb::num_outputs();
+		DEBUG("%d, %d, %d", numParams, numInputs, numOutputs);
+
 		// Initialize sample buffers
 		// TODO - do block sample processing
 		allocBuffers(1);
 
-		numParams = gigaverb::num_params();
-		numInputs = gigaverb::num_inputs();
-		numOutputs = gigaverb::num_outputs();
-
 		// Configure parameters
-		config(gigaverb::num_params(), numInputs, numOutputs, 0);
-		for (int i = 0; i < gigaverb::num_params(); i++) {
+		config(numParams, numInputs, numOutputs, 0);
+		for (int i = 0; i < numParams; i++) {
 			std::string name = std::string(gigaverb::getparametername(moduleState, i));
 			std::string units = std::string(gigaverb::getparameterunits(moduleState, i));
 			float min = 0.0;
@@ -44,8 +45,8 @@ struct Gigaverb : Module {
 	}
 
 	~Gigaverb() {
-		gigaverb::destroy(moduleState);
 		deleteBuffers();
+		gigaverb::destroy(moduleState);
 	}
 
 	void allocBuffers(long bufferSize) {
@@ -60,34 +61,42 @@ struct Gigaverb : Module {
 	}
 
 	void deleteBuffers() {
-		for (int i = 0; i < numInputs; i++) {
-			delete[] inputBuffers[i];
+		if (inputBuffers) {
+			for (int i = 0; i < numInputs; i++) {
+				if (inputBuffers[i]) {
+					delete[] inputBuffers[i];
+				}
+			}
+			delete[] inputBuffers;
 		}
-		delete[] inputBuffers;
 
-		for (int i = 0; i < numOutputs; i++) {
-			delete[] outputBuffers[i];
+		if (outputBuffers) {
+			for (int i = 0; i < numOutputs; i++) {
+				if (outputBuffers[i]) {
+					delete[] outputBuffers[i];
+				}
+			}
+			delete[] outputBuffers;
 		}
-		delete[] outputBuffers;
 	}
 
 	void process(const ProcessArgs& args) override {
-		// Fill input buffers
-		for (int i = 0; i < numInputs; i++) {
-			if (inputs[i].isConnected()) {
-				inputBuffers[0][i] = inputs[i].getVoltage(0) / 5.f;
-			} else {
-				inputBuffers[0][i] = 0.f;
-			}
-		}
+	// 	// Fill input buffers
+	// 	for (int i = 0; i < numInputs; i++) {
+	// 		if (inputs[i].isConnected()) {
+	// 			inputBuffers[0][i] = inputs[i].getVoltage(0) / 5.f;
+	// 		} else {
+	// 			inputBuffers[0][i] = 0.f;
+	// 		}
+	// 	}
 
-		// Process
-		gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, 1);
+	// 	// Process
+	// 	gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, 1);
 
-		// Send out
-		for (int i = 0; i < numOutputs; i++) {
-			outputs[i].setVoltage(outputBuffers[0][i] * 5.f, 0);
-		}
+	// 	// Send out
+	// 	for (int i = 0; i < numOutputs; i++) {
+	// 		outputs[i].setVoltage(outputBuffers[0][i] * 5.f, 0);
+	// 	}
 	}
 };
 
@@ -149,6 +158,10 @@ struct TextDisplay : TransparentWidget {
 /// Main module UI
 
 struct GigaverbWidget : ModuleWidget {
+	int numParams;
+	int numInputs;
+	int numOutputs;
+
 	// Each column of ports has a certain number of "cells" that contain a port and label. 
 	int ports_per_col = 6;
 
@@ -175,41 +188,63 @@ struct GigaverbWidget : ModuleWidget {
 	int param_port_center_offset = active_box_height / params_per_col * (1 / 2);
 	int param_label_offset = active_box_height / params_per_col * (4 / 5);
 
-	int module_hp;
+	int module_hp = 8;
 	
-	Panel* panel;
+	Panel *panel;
+	bool dirty = false;
+
 
 	GigaverbWidget(Gigaverb* module) {
 		setModule(module);
+		box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
 
 		if (module) {
-			module_hp = 2 + 3 * (std::ceil(module->numInputs / ports_per_col) 
-						  + std::ceil(module->numOutputs / ports_per_col)
-						  + std::ceil(module->numParams / params_per_col));
+			// Make these publically accessible to the widget 
+			numInputs = module->numInputs;
+			numOutputs = module->numOutputs;
+			numParams = module->numParams;
 
+			// Figure out the width of the module
+			module_hp = 2 + 3 * (std::ceil(numInputs / ports_per_col) 
+						  + std::ceil(numOutputs / ports_per_col)
+						  + std::ceil(numParams / params_per_col));
+
+			box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
+
+			// Draw on the next step
+			dirty = true;
+		}
+	}
+
+
+	// Runs with every UI frame update
+	void step() override {
+
+		// The widget will be dirtied after the module is registered in the constructor
+		if (dirty) {
+			// Background panel
+			panel = new Panel(55, 71, 79);
+			addChild(panel);
+			panel->box.size = box.size;
+
+			// Title text
 			TextDisplay *title = new TextDisplay(box.size.x / 2, top_margin, box.size.x, "gigaverb");
 			addChild(title);
 
-			box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
-			panel = new Panel(55, 71, 79);
-			addChild(panel);
+			// Screws
+			addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
+			addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 0)));
+			addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 365)));
+			addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 365)));
+
+			// PORTS, PARAMS, LABELS
+			
 		}
 
-		// screws
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 0)));
-		addChild(createWidget<ScrewSilver>(Vec(RACK_GRID_WIDTH, 365)));
-		addChild(createWidget<ScrewSilver>(Vec(box.size.x - 30, 365)));
-	}
-
-	void step() override {
-		panel->box.size = box.size;
 		ModuleWidget::step();
 	}
-
 };
 
 
 /// Register the model
-
 Model* modelGigaverb = createModel<Gigaverb, GigaverbWidget>("gigaverb");
