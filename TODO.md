@@ -1,4 +1,5 @@
-- [ ] handle dynamic layout for ports and parameters
+- [x] handle dynamic layout for ports and parameters
+- [ ] fix crashes (probably due to buffer allocation?)
 - [ ] make sure inputs and outputs are scaled properly
 - [ ] write generate new project script (copies and renames /gen/_starter directory)
 - [ ] write post-export script
