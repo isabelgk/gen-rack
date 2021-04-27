@@ -11,10 +11,14 @@ struct Gigaverb : Module {
 	CommonState *moduleState;
 	t_sample **inputBuffers;  // access like: buffer[sample #][numInputs]
 	t_sample **outputBuffers;
+    int currentBufferSize = 1;
 
 	int numParams;
 	int numInputs;
 	int numOutputs;
+
+    int count = 0;
+    int bufSize = 256;
 
 	Gigaverb() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
@@ -27,8 +31,15 @@ struct Gigaverb : Module {
 		numOutputs = gigaverb::num_outputs();
 
 		// Initialize sample buffers
-		// TODO - do block sample processing
-		allocBuffers(1);
+		inputBuffers = new t_sample *[numInputs];
+		for (int i = 0; i < numInputs; i++) {
+			inputBuffers[i] = NULL;
+		}
+
+		outputBuffers = new t_sample *[numOutputs];
+		for (int i = 0; i < numOutputs; i++) {
+			outputBuffers[i] = NULL;
+		}
 
 		// Configure parameters
 		config(numParams, numInputs + numParams, numOutputs, 0);
@@ -46,60 +57,59 @@ struct Gigaverb : Module {
 	}
 
 	~Gigaverb() {
-		deleteBuffers();
 		gigaverb::destroy(moduleState);
 	}
 
-	void allocBuffers(long bufferSize) {
-		inputBuffers = new t_sample *[numInputs];
-		for (int i = 0; i < numInputs; i++) {
-			inputBuffers[i] = new t_sample[bufferSize];
-		}
-		outputBuffers = new t_sample *[numOutputs];
-		for (int i = 0; i < numOutputs; i++) {
-			outputBuffers[i] = new t_sample[bufferSize];
-		}
-	}
 
-	void deleteBuffers() {
-		if (inputBuffers) {
-			for (int i = 0; i < numInputs; i++) {
-				if (inputBuffers[i]) {
-					delete[] inputBuffers[i];
-				}
-			}
-			delete[] inputBuffers;
-		}
+    void assureBufferSize(long bufferSize) {
 
-		if (outputBuffers) {
-			for (int i = 0; i < numOutputs; i++) {
-				if (outputBuffers[i]) {
-					delete[] outputBuffers[i];
-				}
-			}
-			delete[] outputBuffers;
-		}
-	}
+        if (bufferSize > currentBufferSize) {
+            for (int i = 0; i < numInputs; i++) {
+                if (inputBuffers[i]) {
+                    delete inputBuffers[i];
+                }
+                inputBuffers[i] = new t_sample[bufferSize];
+            }
+
+            for (int i = 0; i < numOutputs; i++) {
+                if (outputBuffers[i]) {
+                    delete outputBuffers[i];
+                }
+                outputBuffers[i] = new t_sample[bufferSize];
+            }
+            
+            currentBufferSize = bufferSize;
+        }
+    }
+
 
 	void process(const ProcessArgs& args) override {
-		// Fill input buffers
+        if (count == 0) {
+            assureBufferSize(bufSize);
+        }
+
+        if (count >= bufSize) {
+            count = 0;
+        }
+
 		for (int i = 0; i < numInputs; i++) {
-			if (inputs[i].isConnected()) {
-				inputBuffers[0][i] = inputs[i].getVoltage(0) / 5.f;
+			if (inputs[i].isConnected() && inputBuffers[i]) {
+				inputBuffers[i][count] = inputs[i].getVoltage(0) / 5.f;
 			} else {
-				inputBuffers[0][i] = 0.f;
+				inputBuffers[i][count] = 0.f;
 			}
 		}
 
-		// Process
-		gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, 1);
+        if (count == bufSize - 1) {
+            gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, bufSize);
+        }
 
 		// Send out
 		for (int i = 0; i < numOutputs; i++) {
-			if (outputBuffers[0][i]) {
-				outputs[i].setVoltage(outputBuffers[0][i] * 5.f, 0);
-			}
+            outputs[i].setVoltage(outputBuffers[i][count] * 5.f, 0);
 		}
+
+        count++;
 	}
 };
 
@@ -257,7 +267,7 @@ struct GigaverbWidget : ModuleWidget {
 
 			for (int i = 0; i < numParams; i++) {
 				std::string paramLabel = std::string(gigaverb::getparametername(module->moduleState, i));
-				paramLabel.resize(12);
+				paramLabel.resize(10);
 				paramLabels.push_back(paramLabel);
 			}
 
