@@ -1,6 +1,9 @@
 #include "plugin.hpp"
 #include "gigaverb.h"
 
+int integer_div_round_up(int x, int y) {
+	return x / y + (x % y != 0);
+}
 
 /// Processing
 
@@ -13,7 +16,6 @@ struct Gigaverb : Module {
 	int numInputs;
 	int numOutputs;
 
-
 	Gigaverb() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
 		// and update it later if needed
@@ -23,14 +25,13 @@ struct Gigaverb : Module {
 		numParams = gigaverb::num_params();
 		numInputs = gigaverb::num_inputs();
 		numOutputs = gigaverb::num_outputs();
-		DEBUG("%d, %d, %d", numParams, numInputs, numOutputs);
 
 		// Initialize sample buffers
 		// TODO - do block sample processing
 		allocBuffers(1);
 
 		// Configure parameters
-		config(numParams, numInputs, numOutputs, 0);
+		config(numParams, numInputs + numParams, numOutputs, 0);
 		for (int i = 0; i < numParams; i++) {
 			std::string name = std::string(gigaverb::getparametername(moduleState, i));
 			std::string units = std::string(gigaverb::getparameterunits(moduleState, i));
@@ -81,22 +82,24 @@ struct Gigaverb : Module {
 	}
 
 	void process(const ProcessArgs& args) override {
-	// 	// Fill input buffers
-	// 	for (int i = 0; i < numInputs; i++) {
-	// 		if (inputs[i].isConnected()) {
-	// 			inputBuffers[0][i] = inputs[i].getVoltage(0) / 5.f;
-	// 		} else {
-	// 			inputBuffers[0][i] = 0.f;
-	// 		}
-	// 	}
+		// Fill input buffers
+		for (int i = 0; i < numInputs; i++) {
+			if (inputs[i].isConnected()) {
+				inputBuffers[0][i] = inputs[i].getVoltage(0) / 5.f;
+			} else {
+				inputBuffers[0][i] = 0.f;
+			}
+		}
 
-	// 	// Process
-	// 	gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, 1);
+		// Process
+		gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, 1);
 
-	// 	// Send out
-	// 	for (int i = 0; i < numOutputs; i++) {
-	// 		outputs[i].setVoltage(outputBuffers[0][i] * 5.f, 0);
-	// 	}
+		// Send out
+		for (int i = 0; i < numOutputs; i++) {
+			if (outputBuffers[0][i]) {
+				outputs[i].setVoltage(outputBuffers[0][i] * 5.f, 0);
+			}
+		}
 	}
 };
 
@@ -122,7 +125,7 @@ struct Panel : Widget {
 	}
 };
 
-struct TextDisplay : TransparentWidget {
+struct Title : TransparentWidget {
 	std::shared_ptr<Font> font;
 	float _x;
 	float _y;
@@ -131,7 +134,7 @@ struct TextDisplay : TransparentWidget {
 	NVGcolor _color;
 	int _fs;
 
-	TextDisplay(float x, float y, float w, const char* text, NVGcolor color = nvgRGB(230, 230, 230), int fs = 16) {
+	Title(float x, float y, float w, const char* text, NVGcolor color = nvgRGB(230, 230, 230), int fs = 24) {
 		_x = x;
 		_y = y;
 		_w = w;
@@ -139,6 +142,38 @@ struct TextDisplay : TransparentWidget {
 		_color = color;
 		_fs = fs;
 		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/Lato/Lato-Black.ttf"));
+	}
+
+	void draw (const DrawArgs &args) override {
+		nvgBeginPath(args.vg);
+		nvgFontFaceId(args.vg, font->handle);
+		nvgFontSize(args.vg, _fs);
+		nvgTextAlign(args.vg, NVG_ALIGN_TOP | NVG_ALIGN_CENTER);
+		nvgFillColor(args.vg, _color);
+		nvgText(args.vg, _x, _y, _text, NULL);
+
+		float bounds[4];
+		nvgTextBounds(args.vg, _x + _w/2, _y, _text, NULL, bounds);
+	}
+};
+
+struct TextLabel : TransparentWidget {
+	std::shared_ptr<Font> font;
+	float _x;
+	float _y;
+	float _w;
+	const char* _text;
+	NVGcolor _color;
+	int _fs;
+
+	TextLabel(float x, float y, float w, const char* text, NVGcolor color = nvgRGB(230, 230, 230), int fs = 12) {
+		_x = x;
+		_y = y;
+		_w = w;
+		_text = text;
+		_color = color;
+		_fs = fs;
+		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/Lato/Lato-Regular.ttf"));
 	}
 
 	void draw (const DrawArgs &args) override {
@@ -162,6 +197,10 @@ struct GigaverbWidget : ModuleWidget {
 	int numInputs;
 	int numOutputs;
 
+	std::vector<std::string> inputLabels;
+	std::vector<std::string> outputLabels;
+	std::vector<std::string> paramLabels;
+
 	// Each column of ports has a certain number of "cells" that contain a port and label. 
 	int ports_per_col = 6;
 
@@ -184,9 +223,9 @@ struct GigaverbWidget : ModuleWidget {
 	// Offset from the top of a cell to the knobs, ports, and labels
 	float port_center_offset = active_box_height / ports_per_col * 0.25f;
 	float label_port_offset = active_box_height / ports_per_col * 0.55f;
-	float param_knob_center_offset = active_box_height / params_per_col * (1 / 4);
-	float param_port_center_offset = active_box_height / params_per_col * (1 / 2);
-	float param_label_offset = active_box_height / params_per_col * (4 / 5);
+	float param_knob_center_offset = active_box_height / params_per_col * 0.25f;
+	float param_port_center_offset = active_box_height / params_per_col * 0.65f;
+	float param_label_offset = active_box_height / params_per_col * 0.85f;
 
 	int module_hp = 8;
 	
@@ -202,17 +241,32 @@ struct GigaverbWidget : ModuleWidget {
 
 		if (module) {
 			// Make these publically accessible to the widget
+			numParams = module->numParams;
 			numInputs = module->numInputs;
 			numOutputs = module->numOutputs;
-			numParams = module->numParams;
+
+			for (int i = 0; i < numInputs; i++) {
+				std::string inputLabel = std::string("in ") + std::to_string(i + 1);
+				inputLabels.push_back(inputLabel);
+			}
+
+			for (int i = 0; i < numOutputs; i++) {
+				std::string outputLabel = std::string("out ") + std::to_string(i + 1);
+				outputLabels.push_back(outputLabel);
+			}
+
+			for (int i = 0; i < numParams; i++) {
+				std::string paramLabel = std::string(gigaverb::getparametername(module->moduleState, i));
+				paramLabel.resize(12);
+				paramLabels.push_back(paramLabel);
+			}
 
 			// Figure out the width of the module
-			module_hp = 2 + 3 * (std::ceil((float)numInputs / (float)ports_per_col) 
-						  + std::ceil((float)numOutputs / (float)ports_per_col)
-						  + std::ceil((float)numParams / (float)params_per_col));
+			module_hp = 2 + 3 * (integer_div_round_up(numInputs, ports_per_col)
+						  + integer_div_round_up(numOutputs, ports_per_col)
+						  + integer_div_round_up(numParams, params_per_col));
 
 			box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
-			DEBUG("HP = %d", module_hp);
 
 			// Draw on the next step
 			dirty = true;
@@ -231,7 +285,7 @@ struct GigaverbWidget : ModuleWidget {
 			panel->box.size = box.size;
 
 			// Title text
-			TextDisplay *title = new TextDisplay(box.size.x / 2, top_margin, box.size.x, "gigaverb");
+			Title *title = new Title(box.size.x / 2, top_margin, box.size.x, "gigaverb");
 			addChild(title);
 
 			// Screws
@@ -242,7 +296,8 @@ struct GigaverbWidget : ModuleWidget {
 
 			// PORTS, PARAMS, LABELS
 			for (int i = 0; i < numInputs; i++) {
-				float left_x = l_margin + (float)(i / ports_per_col) * w_col;
+				float left_x = l_margin
+								 + int(i / ports_per_col) * w_col;
 				float center_x = left_x + w_col / 2;
 
 				float top_y = top_margin + h_title + (i % ports_per_col) * (active_box_height / ports_per_col);
@@ -250,16 +305,46 @@ struct GigaverbWidget : ModuleWidget {
 				float label_center_y = top_y + label_port_offset;
 
 				addInput(createInputCentered<PJ301MPort>(Vec(center_x, port_center_y), module, i));
-				TextDisplay *label = new TextDisplay(center_x, label_center_y, left_x, "test", nvgRGB(230, 230, 230), 10);
+
+				TextLabel *label = new TextLabel(center_x, label_center_y, left_x, inputLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
 				addChild(label);
 			}
 			
 			for (int i = 0; i < numParams; i++) {
-				
+				float left_x = l_margin 
+								+ integer_div_round_up(numInputs, ports_per_col) * w_col 
+								+ int(i / params_per_col) * w_col;				
+				float center_x = left_x + w_col / 2;
+
+				float top_y = top_margin + h_title + (i % params_per_col) * (active_box_height / params_per_col);
+
+				float knob_center_y = top_y + param_knob_center_offset;
+				float port_center_y = top_y + param_port_center_offset;
+				float label_center_y = top_y + param_label_offset;
+
+				addParam(createParamCentered<RoundSmallBlackKnob>(Vec(center_x, knob_center_y), module, i));
+				addInput(createInputCentered<PJ301MPort>(Vec(center_x, port_center_y), module, i + numInputs));
+
+				TextLabel *label = new TextLabel(center_x, label_center_y, left_x, paramLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
+				addChild(label);
 			}
 			
 			for (int i = 0; i < numOutputs; i++) {
-				
+				float left_x = l_margin 
+								+ integer_div_round_up(numInputs, ports_per_col) * w_col 
+								+ integer_div_round_up(numParams, params_per_col) * w_col 
+								+ int(i / ports_per_col) * w_col;
+
+				float center_x = left_x + w_col / 2;
+
+				float top_y = top_margin + h_title + (i % ports_per_col) * (active_box_height / ports_per_col);
+				float port_center_y = top_y + port_center_offset;
+				float label_center_y = top_y + label_port_offset;
+
+				addOutput(createOutputCentered<PJ301MPort>(Vec(center_x, port_center_y), module, i));
+
+				TextLabel *label = new TextLabel(center_x, label_center_y, left_x, outputLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
+				addChild(label);
 			}
 
 			dirty = false;
