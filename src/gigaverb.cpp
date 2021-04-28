@@ -41,6 +41,8 @@ struct Gigaverb : Module {
 			outputBuffers[i] = NULL;
 		}
 
+        assureBufferSize(bufSize);
+
 		// Configure parameters
 		config(numParams, numInputs + numParams, numOutputs, 0);
 		for (int i = 0; i < numParams; i++) {
@@ -62,7 +64,6 @@ struct Gigaverb : Module {
 
 
     void assureBufferSize(long bufferSize) {
-
         if (bufferSize > currentBufferSize) {
             for (int i = 0; i < numInputs; i++) {
                 if (inputBuffers[i]) {
@@ -77,39 +78,38 @@ struct Gigaverb : Module {
                 }
                 outputBuffers[i] = new t_sample[bufferSize];
             }
-            
             currentBufferSize = bufferSize;
         }
     }
 
 
 	void process(const ProcessArgs& args) override {
-        if (count == 0) {
-            assureBufferSize(bufSize);
-        }
-
-        if (count >= bufSize) {
+		if (count >= bufSize) {
             count = 0;
         }
 
-		for (int i = 0; i < numInputs; i++) {
-			if (inputs[i].isConnected() && inputBuffers[i]) {
-				inputBuffers[i][count] = inputs[i].getVoltage(0) / 5.f;
-			} else {
+		// Fill inputs
+        for (int i = 0; i < numInputs; i++) {
+			if (inputs[i].isConnected()) {
+				inputBuffers[i][count] = inputs[i].getVoltage() / 5.f;
+			}
+			else {
 				inputBuffers[i][count] = 0.f;
 			}
 		}
 
-        if (count == bufSize - 1) {
-            gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, bufSize);
-        }
-
-		// Send out
+		// Set output
 		for (int i = 0; i < numOutputs; i++) {
-            outputs[i].setVoltage(outputBuffers[i][count] * 5.f, 0);
+			outputs[i].setVoltage(outputBuffers[i][count] * 5.f);
 		}
 
+		// Step forward
         count++;
+
+		// Perform when we've filled the buffer
+        if (count == bufSize) {
+            gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, bufSize);
+        }
 	}
 };
 
