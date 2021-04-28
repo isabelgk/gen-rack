@@ -1,15 +1,12 @@
 #include "plugin.hpp"
 #include "gigaverb.h"
 
-int integer_div_round_up(int x, int y) {
-	return x / y + (x % y != 0);
-}
 
 /// Processing
 
 struct Gigaverb : Module {
 	CommonState *moduleState;
-	t_sample **inputBuffers;  // access like: buffer[sample #][numInputs]
+	t_sample **inputBuffers;  // access like: buffer[input #][sample #]
 	t_sample **outputBuffers;
     int currentBufferSize = 1;
 
@@ -114,92 +111,6 @@ struct Gigaverb : Module {
 };
 
 
-/// Custom widgets
-
-struct Panel : Widget {
-    NVGcolor color = nvgRGB(255, 255, 255);
-	Panel(int r = 255, int g = 255, int b = 255) {
-        color = nvgRGB(r, g, b);
-	}
-
-	void step() override {
-		Widget::step();
-	}
-
-	void draw(const DrawArgs& args) override {
-		nvgBeginPath(args.vg);
-		nvgRect(args.vg, 0.0, 0.0, box.size.x, box.size.y);
-		nvgFillColor(args.vg, color);
-		nvgFill(args.vg);
-		Widget::draw(args);
-	}
-};
-
-struct Title : TransparentWidget {
-	std::shared_ptr<Font> font;
-	float _x;
-	float _y;
-	float _w;
-	const char* _text;
-	NVGcolor _color;
-	int _fs;
-
-	Title(float x, float y, float w, const char* text, NVGcolor color = nvgRGB(230, 230, 230), int fs = 24) {
-		_x = x;
-		_y = y;
-		_w = w;
-		_text = text;
-		_color = color;
-		_fs = fs;
-		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/Lato/Lato-Black.ttf"));
-	}
-
-	void draw (const DrawArgs &args) override {
-		nvgBeginPath(args.vg);
-		nvgFontFaceId(args.vg, font->handle);
-		nvgFontSize(args.vg, _fs);
-		nvgTextAlign(args.vg, NVG_ALIGN_TOP | NVG_ALIGN_CENTER);
-		nvgFillColor(args.vg, _color);
-		nvgText(args.vg, _x, _y, _text, NULL);
-
-		float bounds[4];
-		nvgTextBounds(args.vg, _x + _w/2, _y, _text, NULL, bounds);
-	}
-};
-
-struct TextLabel : TransparentWidget {
-	std::shared_ptr<Font> font;
-	float _x;
-	float _y;
-	float _w;
-	const char* _text;
-	NVGcolor _color;
-	int _fs;
-
-	TextLabel(float x, float y, float w, const char* text, NVGcolor color = nvgRGB(230, 230, 230), int fs = 12) {
-		_x = x;
-		_y = y;
-		_w = w;
-		_text = text;
-		_color = color;
-		_fs = fs;
-		font = APP->window->loadFont(asset::plugin(pluginInstance, "res/Lato/Lato-Regular.ttf"));
-	}
-
-	void draw (const DrawArgs &args) override {
-		nvgBeginPath(args.vg);
-		nvgFontFaceId(args.vg, font->handle);
-		nvgFontSize(args.vg, _fs);
-		nvgTextAlign(args.vg, NVG_ALIGN_TOP | NVG_ALIGN_CENTER);
-		nvgFillColor(args.vg, _color);
-		nvgText(args.vg, _x, _y, _text, NULL);
-
-		float bounds[4];
-		nvgTextBounds(args.vg, _x + _w/2, _y, _text, NULL, bounds);
-	}
-};
-
-
 /// Main module UI
 
 struct GigaverbWidget : ModuleWidget {
@@ -239,7 +150,7 @@ struct GigaverbWidget : ModuleWidget {
 
 	int module_hp = 8;
 	
-	Panel *panel;
+	genrack::Panel *panel;
 	bool dirty = false;
 
 
@@ -272,9 +183,9 @@ struct GigaverbWidget : ModuleWidget {
 			}
 
 			// Figure out the width of the module
-			module_hp = 2 + 3 * (integer_div_round_up(numInputs, ports_per_col)
-						  + integer_div_round_up(numOutputs, ports_per_col)
-						  + integer_div_round_up(numParams, params_per_col));
+			module_hp = 2 + 3 * (genrack::util::int_div_round_up(numInputs, ports_per_col)
+						  + genrack::util::int_div_round_up(numOutputs, ports_per_col)
+						  + genrack::util::int_div_round_up(numParams, params_per_col));
 
 			box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
 
@@ -290,12 +201,12 @@ struct GigaverbWidget : ModuleWidget {
 		// The widget will be dirtied after the module is registered in the constructor
 		if (dirty) {
 			// Background panel
-			panel = new Panel(40, 40, 40);
+			panel = new genrack::Panel(40, 40, 40);
 			addChild(panel);
 			panel->box.size = box.size;
 
 			// Title text
-			Title *title = new Title(box.size.x / 2, top_margin, box.size.x, "gigaverb");
+			genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, "gigaverb");
 			addChild(title);
 
 			// Screws
@@ -316,13 +227,13 @@ struct GigaverbWidget : ModuleWidget {
 
 				addInput(createInputCentered<PJ301MPort>(Vec(center_x, port_center_y), module, i));
 
-				TextLabel *label = new TextLabel(center_x, label_center_y, left_x, inputLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
+				genrack::TextLabel *label = new genrack::TextLabel(center_x, label_center_y, left_x, inputLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
 				addChild(label);
 			}
 			
 			for (int i = 0; i < numParams; i++) {
 				float left_x = l_margin 
-								+ integer_div_round_up(numInputs, ports_per_col) * w_col 
+								+ genrack::util::int_div_round_up(numInputs, ports_per_col) * w_col 
 								+ int(i / params_per_col) * w_col;				
 				float center_x = left_x + w_col / 2;
 
@@ -335,14 +246,14 @@ struct GigaverbWidget : ModuleWidget {
 				addParam(createParamCentered<RoundSmallBlackKnob>(Vec(center_x, knob_center_y), module, i));
 				addInput(createInputCentered<PJ301MPort>(Vec(center_x, port_center_y), module, i + numInputs));
 
-				TextLabel *label = new TextLabel(center_x, label_center_y, left_x, paramLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
+				genrack::TextLabel *label = new genrack::TextLabel(center_x, label_center_y, left_x, paramLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
 				addChild(label);
 			}
 			
 			for (int i = 0; i < numOutputs; i++) {
 				float left_x = l_margin 
-								+ integer_div_round_up(numInputs, ports_per_col) * w_col 
-								+ integer_div_round_up(numParams, params_per_col) * w_col 
+								+ genrack::util::int_div_round_up(numInputs, ports_per_col) * w_col 
+								+ genrack::util::int_div_round_up(numParams, params_per_col) * w_col 
 								+ int(i / ports_per_col) * w_col;
 
 				float center_x = left_x + w_col / 2;
@@ -353,7 +264,7 @@ struct GigaverbWidget : ModuleWidget {
 
 				addOutput(createOutputCentered<PJ301MPort>(Vec(center_x, port_center_y), module, i));
 
-				TextLabel *label = new TextLabel(center_x, label_center_y, left_x, outputLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
+				genrack::TextLabel *label = new genrack::TextLabel(center_x, label_center_y, left_x, outputLabels[i].c_str(), nvgRGB(230, 230, 230), 10);
 				addChild(label);
 			}
 
