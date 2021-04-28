@@ -8,14 +8,14 @@ struct Gigaverb : Module {
 	CommonState *moduleState;
 	t_sample **inputBuffers;  // access like: buffer[input #][sample #]
 	t_sample **outputBuffers;
-    int currentBufferSize = 1;
+	int currentBufferSize = 1;
 
 	int numParams;
 	int numInputs;
 	int numOutputs;
 
-    int count = 0;
-    int bufSize = 256;
+	int count = 0;
+	int bufSize = 256;
 
 	Gigaverb() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
@@ -38,7 +38,7 @@ struct Gigaverb : Module {
 			outputBuffers[i] = NULL;
 		}
 
-        assureBufferSize(bufSize);
+		assureBufferSize(bufSize);
 
 		// Configure parameters
 		config(numParams, numInputs + numParams, numOutputs, 0);
@@ -60,33 +60,33 @@ struct Gigaverb : Module {
 	}
 
 
-    void assureBufferSize(long bufferSize) {
-        if (bufferSize > currentBufferSize) {
-            for (int i = 0; i < numInputs; i++) {
-                if (inputBuffers[i]) {
-                    delete inputBuffers[i];
-                }
-                inputBuffers[i] = new t_sample[bufferSize];
-            }
+	void assureBufferSize(long bufferSize) {
+		if (bufferSize > currentBufferSize) {
+			for (int i = 0; i < numInputs; i++) {
+				if (inputBuffers[i]) {
+					delete inputBuffers[i];
+				}
+				inputBuffers[i] = new t_sample[bufferSize];
+			}
 
-            for (int i = 0; i < numOutputs; i++) {
-                if (outputBuffers[i]) {
-                    delete outputBuffers[i];
-                }
-                outputBuffers[i] = new t_sample[bufferSize];
-            }
-            currentBufferSize = bufferSize;
-        }
-    }
+			for (int i = 0; i < numOutputs; i++) {
+				if (outputBuffers[i]) {
+					delete outputBuffers[i];
+				}
+				outputBuffers[i] = new t_sample[bufferSize];
+			}
+			currentBufferSize = bufferSize;
+		}
+	}
 
 
 	void process(const ProcessArgs& args) override {
 		if (count >= bufSize) {
-            count = 0;
-        }
+			count = 0;
+		}
 
 		// Fill inputs
-        for (int i = 0; i < numInputs; i++) {
+		for (int i = 0; i < numInputs; i++) {
 			if (inputs[i].isConnected()) {
 				inputBuffers[i][count] = inputs[i].getVoltage() / 5.f;
 			}
@@ -101,12 +101,12 @@ struct Gigaverb : Module {
 		}
 
 		// Step forward
-        count++;
+		count++;
 
 		// Perform when we've filled the buffer
-        if (count == bufSize) {
-            gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, bufSize);
-        }
+		if (count == bufSize) {
+			gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, bufSize);
+		}
 	}
 };
 
