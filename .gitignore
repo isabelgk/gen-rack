@@ -3,3 +3,5 @@ build/
 dep/
 dist/
 gen/exports/*
+*.dll
+*.code-workspace

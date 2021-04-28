@@ -1,0 +1,26 @@
+{
+    "slug": "gen-rack",
+    "name": "gen-rack",
+    "version": "1.0.0-beta",
+    "license": "GPL-3.0-or-later",
+    "brand": "gen-rack",
+    "author": "Isabel Kaspriskie",
+    "authorEmail": "ikaspriskie@gmail.com",
+    "authorUrl": "",
+    "pluginUrl": "",
+    "manualUrl": "",
+    "sourceUrl": "https://github.com/isabelgk/gen-rack",
+    "donateUrl": "",
+    "changelogUrl": "",
+    "modules": [
+      {
+        "slug": "gigaverb",
+        "name": "gigaverb",
+        "description": "Gigaverb reverb",
+        "tags": [
+          "effect",
+          "reverb"
+        ]
+      }
+    ]
+  }
