@@ -8,6 +8,7 @@ struct Gigaverb : Module {
 	CommonState *moduleState;
 	t_sample **inputBuffers;  // access like: buffer[input #][sample #]
 	t_sample **outputBuffers;
+	int currentBufferSize = 1;
 
 	int numParams;
 	int numInputs;
@@ -15,7 +16,6 @@ struct Gigaverb : Module {
 
 	int count = 0;
 	int bufSize = 256;
-	int currentBufferSize = bufSize;
 
 	Gigaverb() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
