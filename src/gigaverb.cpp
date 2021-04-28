@@ -8,6 +8,7 @@ struct Gigaverb : Module {
 	CommonState *moduleState;
 	t_sample **inputBuffers;  // access like: buffer[input #][sample #]
 	t_sample **outputBuffers;
+	int currentBufferSize = 1;
 
 	int numParams;
 	int numInputs;
@@ -15,7 +16,6 @@ struct Gigaverb : Module {
 
 	int count = 0;
 	int bufSize = 256;
-	int currentBufferSize = bufSize;
 
 	Gigaverb() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
@@ -105,6 +105,22 @@ struct Gigaverb : Module {
 
 		// Perform when we've filled the buffer
 		if (count == bufSize) {
+			// Update any parameters
+			for (int i = 0; i < numParams; i++) {
+				// Get VCV inputs
+				float knobVal = params[i].getValue();  // Already scaled to range that genlib will understand
+				float cvVal = inputs[i + numInputs].isConnected() ? inputs[i + numInputs].getVoltage() / 5.f : 0.f;  // Normalize to -1..1
+
+				// Scale to range of parameter
+				t_param min = gigaverb::getparametermin(moduleState, i);
+				t_param max = gigaverb::getparametermax(moduleState, i);
+				t_param range = fabs(max - min);
+				t_param val = clamp(knobVal + cvVal * range, min, max); // Offset the knobVal by the CV input
+
+				gigaverb::setparameter(moduleState, i, val, NULL);
+			}
+
+			// Fill the buffers
 			gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, bufSize);
 		}
 	}
