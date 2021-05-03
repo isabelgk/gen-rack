@@ -164,7 +164,7 @@ struct GigaverbWidget : ModuleWidget {
 	float param_port_center_offset = active_box_height / params_per_col * 0.65f;
 	float param_label_offset = active_box_height / params_per_col * 0.85f;
 
-	int module_hp = 8;
+	int module_hp = 12;
 	
 	genrack::Panel *panel;
 	bool dirty = false;
@@ -174,7 +174,12 @@ struct GigaverbWidget : ModuleWidget {
 		setModule(module);
 		box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
 
-		// TODO: placeholder background
+		// Default background and title for module browser - will be drawn over when step() is called
+		panel = new genrack::Panel(40, 40, 40);
+		addChild(panel);
+		panel->box.size = box.size;
+		genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, "gigaverb");
+		addChild(title);
 
 		if (module) {
 			// Make these publically accessible to the widget
