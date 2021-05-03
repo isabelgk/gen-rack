@@ -56,6 +56,21 @@ struct Gigaverb : Module {
 
 	~Gigaverb() {
 		gigaverb::destroy(moduleState);
+		deleteBuffers();
+	}
+
+	void deleteBuffers() {
+		for (int i = 0; i < numInputs; i++) {
+			if (inputBuffers[i]) {
+				delete inputBuffers[i];
+			}
+		}
+
+		for (int i = 0; i < numOutputs; i++) {
+			if (outputBuffers[i]) {
+				delete outputBuffers[i];
+			}
+		}
 	}
 
 
