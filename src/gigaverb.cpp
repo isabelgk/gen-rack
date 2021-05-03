@@ -8,19 +8,18 @@ struct Gigaverb : Module {
 	CommonState *moduleState;
 	t_sample **inputBuffers;  // access like: buffer[input #][sample #]
 	t_sample **outputBuffers;
-	int currentBufferSize = 1;
+	int currentBufferSize = 256;
 
 	int numParams;
 	int numInputs;
 	int numOutputs;
 
 	int count = 0;
-	int bufSize = 256;
 
 	Gigaverb() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
 		// and update it later if needed
-		moduleState = (CommonState *)gigaverb::create(44100, bufSize);
+		moduleState = (CommonState *)gigaverb::create(44100, currentBufferSize);
 		gigaverb::reset(moduleState);
 
 		numParams = gigaverb::num_params();
@@ -30,15 +29,14 @@ struct Gigaverb : Module {
 		// Initialize sample buffers
 		inputBuffers = new t_sample *[numInputs];
 		for (int i = 0; i < numInputs; i++) {
-			inputBuffers[i] = NULL;
+			inputBuffers[i] = new t_sample[currentBufferSize];
 		}
 
 		outputBuffers = new t_sample *[numOutputs];
 		for (int i = 0; i < numOutputs; i++) {
-			outputBuffers[i] = NULL;
+			outputBuffers[i] = new t_sample[currentBufferSize];
 		}
 
-		assureBufferSize(bufSize);
 
 		// Configure parameters
 		config(numParams, numInputs + numParams, numOutputs, 0);
@@ -54,6 +52,7 @@ struct Gigaverb : Module {
 			configParam(i, min, max, min, name, units);
 		}
 	}
+
 
 	~Gigaverb() {
 		gigaverb::destroy(moduleState);
@@ -81,10 +80,10 @@ struct Gigaverb : Module {
 
 
 	void process(const ProcessArgs& args) override {
-		if (count >= bufSize) {
+		if (count >= currentBufferSize) {
 			count = 0;
 		}
-
+		
 		// Fill inputs
 		for (int i = 0; i < numInputs; i++) {
 			if (inputs[i].isConnected()) {
@@ -104,7 +103,7 @@ struct Gigaverb : Module {
 		count++;
 
 		// Perform when we've filled the buffer
-		if (count == bufSize) {
+		if (count == currentBufferSize) {
 			// Update any parameters
 			for (int i = 0; i < numParams; i++) {
 				// Get VCV inputs
@@ -121,7 +120,7 @@ struct Gigaverb : Module {
 			}
 
 			// Fill the buffers
-			gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, bufSize);
+			gigaverb::perform(moduleState, inputBuffers, numInputs, outputBuffers, numOutputs, currentBufferSize);
 		}
 	}
 };
