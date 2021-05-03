@@ -226,6 +226,7 @@ struct GigaverbWidget : ModuleWidget {
 
 			// Draw on the next step
 			dirty = true;
+			step();
 		}
 	}
 
