@@ -1,11 +1,11 @@
 #include "plugin.hpp"
-#include "gigaverb.h"
+#include "GEN_RACK_DISPLAY_NAME.h"
 
-using namespace gigaverb;
+using namespace GEN_RACK_DISPLAY_NAME;
 
 /// Processing
 
-struct Gigaverb : Module {
+struct GEN_RACK_NAME : Module {
 	CommonState *moduleState;
 	t_sample **inputBuffers;  // access like: buffer[input #][sample #]
 	t_sample **outputBuffers;
@@ -17,7 +17,7 @@ struct Gigaverb : Module {
 
 	int count = 0;
 
-	Gigaverb() {
+	GEN_RACK_NAME() {
 		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
 		// and update it later if needed
 		moduleState = (CommonState *)create(44100, currentBufferSize);
@@ -55,7 +55,7 @@ struct Gigaverb : Module {
 	}
 
 
-	~Gigaverb() {
+	~GEN_RACK_NAME() {
 		destroy(moduleState);
 		deleteBuffers();
 	}
@@ -144,7 +144,7 @@ struct Gigaverb : Module {
 
 /// Main module UI
 
-struct GigaverbWidget : ModuleWidget {
+struct GEN_RACK_NAMEWidget : ModuleWidget {
 	int numParams;
 	int numInputs;
 	int numOutputs;
@@ -185,7 +185,7 @@ struct GigaverbWidget : ModuleWidget {
 	bool dirty = false;
 
 
-	GigaverbWidget(Gigaverb* module) {
+	GEN_RACK_NAMEWidget(GEN_RACK_NAME* module) {
 		setModule(module);
 		box.size = Vec(RACK_GRID_WIDTH * module_hp, RACK_GRID_HEIGHT);
 
@@ -193,7 +193,7 @@ struct GigaverbWidget : ModuleWidget {
 		panel = new genrack::Panel(40, 40, 40);
 		addChild(panel);
 		panel->box.size = box.size;
-		genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, gigaverb);
+		genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, GEN_RACK_DISPLAY_NAME);
 		addChild(title);
 
 		if (module) {
@@ -243,7 +243,7 @@ struct GigaverbWidget : ModuleWidget {
 			panel->box.size = box.size;
 
 			// Title text
-			genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, gigaverb);
+			genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, GEN_RACK_DISPLAY_NAME);
 			addChild(title);
 
 			// Screws
@@ -314,4 +314,4 @@ struct GigaverbWidget : ModuleWidget {
 
 
 /// Register the model
-Model* modelGigaverb = createModel<Gigaverb, GigaverbWidget>(gigaverb);
+Model* modelGEN_RACK_NAME = createModel<GEN_RACK_NAME, GEN_RACK_NAMEWidget>(GEN_RACK_DISPLAY_NAME);
