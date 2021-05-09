@@ -8,6 +8,7 @@ SOURCES += $(wildcard gen/exports/*.cpp)
 # VCV module
 FLAGS += -Isrc 
 SOURCES += $(wildcard src/*.cpp)
+SOURCES += $(wildcard src/modules/*.cpp)
 
 # Include the license and module SVGs in the distribution
 DISTRIBUTABLES += $(wildcard ../LICENSE*) res
