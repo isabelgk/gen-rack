@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 564.0, 471.0, 885.0, 491.0 ],
+		"rect" : [ 1019.0, 468.0, 848.0, 419.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -40,13 +40,13 @@
 		"assistshowspatchername" : 0,
 		"boxes" : [ 			{
 				"box" : 				{
-					"id" : "obj-16",
+					"id" : "obj-14",
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 288.0, 127.0, 93.0, 22.0 ],
-					"text" : "build myModule"
+					"patching_rect" : [ 249.0, 62.0, 63.0, 22.0 ],
+					"text" : "script stop"
 				}
 
 			}
@@ -57,7 +57,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 288.0, 101.0, 101.0, 22.0 ],
+					"patching_rect" : [ 299.0, 102.0, 101.0, 22.0 ],
 					"text" : "create myModule"
 				}
 
@@ -69,7 +69,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 249.0, 62.0, 64.0, 22.0 ],
+					"patching_rect" : [ 249.0, 38.0, 64.0, 22.0 ],
 					"text" : "script start"
 				}
 
@@ -89,7 +89,7 @@
 					"numoutlets" : 1,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "bang" ],
-					"patching_rect" : [ 431.0, 204.0, 400.0, 220.0 ],
+					"patching_rect" : [ 431.0, 166.0, 400.0, 220.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -101,16 +101,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "", "" ],
-					"patching_rect" : [ 249.0, 173.0, 201.0, 22.0 ],
-					"saved_object_attributes" : 					{
-						"autostart" : 1,
-						"defer" : 0,
-						"node_bin_path" : "",
-						"npm_bin_path" : "",
-						"watch" : 0
-					}
-,
-					"text" : "node.script gen-rack.js @autostart 1"
+					"patching_rect" : [ 249.0, 135.0, 190.0, 22.0 ],
+					"text" : "node.script builder.js @autostart 1"
 				}
 
 			}
@@ -121,7 +113,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 120.0, 264.0, 139.0, 24.0 ],
+					"patching_rect" : [ 148.0, 315.0, 139.0, 24.0 ],
 					"text" : "Build gen code here"
 				}
 
@@ -133,7 +125,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 31.5, 86.0, 72.0, 22.0 ],
+					"patching_rect" : [ 59.5, 137.0, 72.0, 22.0 ],
 					"text" : "prepend set"
 				}
 
@@ -145,8 +137,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 31.5, 55.0, 110.0, 22.0 ],
-					"text" : "loadmess gen-rack"
+					"patching_rect" : [ 59.5, 106.0, 119.0, 22.0 ],
+					"text" : "loadmess myModule"
 				}
 
 			}
@@ -157,7 +149,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 107.5, 214.5, 68.0, 22.0 ],
+					"patching_rect" : [ 135.5, 265.5, 68.0, 22.0 ],
 					"text" : "exportcode"
 				}
 
@@ -322,8 +314,8 @@
 									"id" : "obj-11",
 									"maxclass" : "newobj",
 									"numinlets" : 1,
-									"numoutlets" : 1,
-									"outlettype" : [ "" ],
+									"numoutlets" : 2,
+									"outlettype" : [ "", "" ],
 									"patching_rect" : [ 26.0, 229.0, 93.0, 22.0 ],
 									"saved_object_attributes" : 									{
 										"filename" : "path-helper.js",
@@ -449,7 +441,7 @@
  ]
 					}
 ,
-					"patching_rect" : [ 31.5, 172.0, 79.0, 22.0 ],
+					"patching_rect" : [ 59.5, 223.0, 79.0, 22.0 ],
 					"saved_object_attributes" : 					{
 						"description" : "",
 						"digest" : "",
@@ -467,7 +459,7 @@
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 75.5, 119.5, 39.0, 20.0 ],
+					"patching_rect" : [ 156.5, 192.5, 39.0, 20.0 ],
 					"text" : "name"
 				}
 
@@ -482,8 +474,8 @@
 					"numoutlets" : 4,
 					"outlettype" : [ "", "int", "", "" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 31.5, 141.5, 92.0, 22.0 ],
-					"text" : "gen-rack",
+					"patching_rect" : [ 59.5, 192.5, 92.0, 22.0 ],
+					"text" : "myModule",
 					"wordwrap" : 0
 				}
 
@@ -495,7 +487,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 64.5, 214.5, 35.0, 22.0 ],
+					"patching_rect" : [ 92.5, 265.5, 35.0, 22.0 ],
 					"text" : "open"
 				}
 
@@ -638,7 +630,7 @@
  ]
 					}
 ,
-					"patching_rect" : [ 31.5, 264.0, 79.0, 22.0 ],
+					"patching_rect" : [ 59.5, 315.0, 79.0, 22.0 ],
 					"saved_object_attributes" : 					{
 						"exportfolder" : "C:/Users/Isabel Kaspriskie/dev/vcv/gen-rack/gen/exports/",
 						"exportname" : "test"
@@ -652,14 +644,14 @@
 		"lines" : [ 			{
 				"patchline" : 				{
 					"destination" : [ "obj-2", 0 ],
-					"source" : [ "obj-15", 0 ]
+					"source" : [ "obj-14", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-2", 0 ],
-					"source" : [ "obj-16", 0 ]
+					"source" : [ "obj-15", 0 ]
 				}
 
 			}
@@ -721,7 +713,7 @@
 			}
  ],
 		"dependency_cache" : [ 			{
-				"name" : "gen-rack.js",
+				"name" : "path-helper.js",
 				"bootpath" : "~/dev/vcv/gen-rack/gen/projects/example",
 				"patcherrelativepath" : ".",
 				"type" : "TEXT",

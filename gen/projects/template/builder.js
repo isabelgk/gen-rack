@@ -20,13 +20,16 @@ maxApi.addHandlers({
                 if (err) {
                     maxApi.post('Error writing .cpp');
                 }
-            })
+            });
         });
-        // TODO - Add to plugin.cpp, plugin.hpp, and plugin.json
+
+        let pluginFile = basedir + 'src/plugin.cpp';
+        // line before end:
+        // 'p->addModel(model' + name.charAt(0).toUpperCase() + name.slice(1) + ');';
+
+        let headerFile = basedir + 'src/plugin.hpp';
+        // 'extern Model* model' + name.charAt(0).toUpperCase() + name.slice(1) + ';';
+        fs.appendFileSync(headerFile, 'extern Model* model' + name.charAt(0).toUpperCase() + name.slice(1) + ';\n');
     },
     
-    // TODO - Run `make install`
-    build: async (name) => {
-    
-    }
 });

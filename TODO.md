@@ -1,13 +1,10 @@
 - [x] handle dynamic layout for ports and parameters
-- [ ] fix crashes (probably due to buffer allocation?)
-- [ ] make sure inputs and outputs are scaled properly
-- [ ] write generate new project script (copies and renames /gen/_starter directory)
+- [x] fix crashes (probably due to buffer allocation?)
+- [x] make sure inputs and outputs are scaled properly
+- [x] write generate new project script (copies and renames /gen/projects/template directory)
 - [ ] write post-export script
-    - [ ] copy and fill in module source code template
-    - [ ] add to plugin.hpp
+    - [x] copy and fill in module source code template
+    - [x] add to plugin.hpp
     - [ ] add to plugin.cpp
-    - [ ] update plugin.json
-    - [ ] run `make install`
 - [ ] buffer resizing
 - [ ] handle sample rate change handling
-- [ ] implement inheritance for less templating?
