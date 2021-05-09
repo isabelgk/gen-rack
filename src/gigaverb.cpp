@@ -12,8 +12,9 @@ struct Gigaverb : Module {
 	t_sample **inputBuffers;
 	t_sample **outputBuffers;
 
-	std::array<int, 6> validBufferSizes = { 64, 128, 256, 512, 1024, 2048 };
+	std::array<int, 10> validBufferSizes = { 1, 4, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 	int currentBufferSize = 256;
+	int currentSampleRate = 44100;
 
 	int numParams;
 	int numInputs;
@@ -22,9 +23,7 @@ struct Gigaverb : Module {
 	int count = 0;
 
 	Gigaverb() {
-		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
-		// and update it later if needed
-		moduleState = (CommonState *)create(44100, currentBufferSize);
+		moduleState = (CommonState *)create(currentSampleRate, currentBufferSize);
 		reset(moduleState);
 
 		numParams = num_params();
@@ -95,11 +94,17 @@ struct Gigaverb : Module {
 			}
 		}
 		currentBufferSize = bufferSize;
+		moduleState->vs = currentBufferSize;
 		count = 0;
 	}
 
 
 	void process(const ProcessArgs& args) override {
+		if (args.sampleRate != currentSampleRate) {
+			moduleState->sr = args.sampleRate;
+			currentSampleRate = args.sampleRate;
+		}
+
 		if (count >= currentBufferSize) {
 			count = 0;
 		}

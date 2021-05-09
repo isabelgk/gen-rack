@@ -1,15 +1,20 @@
 #include "plugin.hpp"
 #include "GEN_RACK_DISPLAY_NAME.h"
+#include <array>
 
 using namespace GEN_RACK_DISPLAY_NAME;
+
 
 /// Processing
 
 struct GEN_RACK_NAME : Module {
 	CommonState *moduleState;
-	t_sample **inputBuffers;  // access like: buffer[input #][sample #]
+	t_sample **inputBuffers;
 	t_sample **outputBuffers;
+
+	std::array<int, 10> validBufferSizes = { 1, 4, 16, 32, 64, 128, 256, 512, 1024, 2048 };
 	int currentBufferSize = 256;
+	int currentSampleRate = 44100;
 
 	int numParams;
 	int numInputs;
@@ -18,9 +23,7 @@ struct GEN_RACK_NAME : Module {
 	int count = 0;
 
 	GEN_RACK_NAME() {
-		// Set default sample rate of 44100 Hz and vector size 1 (VCV uses single sample processing)
-		// and update it later if needed
-		moduleState = (CommonState *)create(44100, currentBufferSize);
+		moduleState = (CommonState *)create(currentSampleRate, currentBufferSize);
 		reset(moduleState);
 
 		numParams = num_params();
@@ -74,8 +77,7 @@ struct GEN_RACK_NAME : Module {
 		}
 	}
 
-
-	void assureBufferSize(long bufferSize) {
+	void setBufferSize(long bufferSize) {
 		if (bufferSize > currentBufferSize) {
 			for (int i = 0; i < numInputs; i++) {
 				if (inputBuffers[i]) {
@@ -90,12 +92,19 @@ struct GEN_RACK_NAME : Module {
 				}
 				outputBuffers[i] = new t_sample[bufferSize];
 			}
-			currentBufferSize = bufferSize;
 		}
+		currentBufferSize = bufferSize;
+		moduleState->vs = currentBufferSize;
+		count = 0;
 	}
 
 
 	void process(const ProcessArgs& args) override {
+		if (args.sampleRate != currentSampleRate) {
+			moduleState->sr = args.sampleRate;
+			currentSampleRate = args.sampleRate;
+		}
+
 		if (count >= currentBufferSize) {
 			count = 0;
 		}
@@ -143,6 +152,15 @@ struct GEN_RACK_NAME : Module {
 
 
 /// Main module UI
+
+struct BufferSizeMenuItem : MenuItem {
+	GEN_RACK_NAME* module;
+	int bufferSize;
+	void onAction(const event::Action& e) override {
+		if (!module) return;
+		module->setBufferSize(bufferSize);
+	}
+};
 
 struct GEN_RACK_NAMEWidget : ModuleWidget {
 	int numParams;
@@ -193,7 +211,7 @@ struct GEN_RACK_NAMEWidget : ModuleWidget {
 		panel = new genrack::Panel(40, 40, 40);
 		addChild(panel);
 		panel->box.size = box.size;
-		genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, GEN_RACK_DISPLAY_NAME);
+		genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, "GEN_RACK_DISPLAY_NAME");
 		addChild(title);
 
 		if (module) {
@@ -243,7 +261,7 @@ struct GEN_RACK_NAMEWidget : ModuleWidget {
 			panel->box.size = box.size;
 
 			// Title text
-			genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, GEN_RACK_DISPLAY_NAME);
+			genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, "GEN_RACK_DISPLAY_NAME");
 			addChild(title);
 
 			// Screws
@@ -310,8 +328,29 @@ struct GEN_RACK_NAMEWidget : ModuleWidget {
 
 		ModuleWidget::step();
 	}
+
+
+	void appendContextMenu(Menu* menu) override {
+		GEN_RACK_NAME* module = dynamic_cast<GEN_RACK_NAME*>(this->module);
+
+		// Buffer sizes selection
+		menu->addChild(new MenuSeparator());
+		MenuItem* bufferSizeLabel = new MenuItem;
+		bufferSizeLabel->disabled = true;
+		bufferSizeLabel->text = "Buffer size";
+		menu->addChild(bufferSizeLabel);
+
+		for (int i = 0; i < (int) module->validBufferSizes.size(); i++) {
+			BufferSizeMenuItem* item = new BufferSizeMenuItem;
+			item->module = module;
+			item->text = std::to_string(module->validBufferSizes[i]).c_str();
+			item->rightText = CHECKMARK(module->currentBufferSize == module->validBufferSizes[i]);
+			item->bufferSize = module->validBufferSizes[i];
+			menu->addChild(item);
+		}
+	}
 };
 
 
 /// Register the model
-Model* modelGEN_RACK_NAME = createModel<GEN_RACK_NAME, GEN_RACK_NAMEWidget>(GEN_RACK_DISPLAY_NAME);
+Model* modelGEN_RACK_NAME = createModel<GEN_RACK_NAME, GEN_RACK_NAMEWidget>("GEN_RACK_DISPLAY_NAME");
