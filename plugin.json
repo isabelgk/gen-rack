@@ -13,14 +13,6 @@
     "donateUrl": "",
     "changelogUrl": "",
     "modules": [
-      {
-        "slug": "gigaverb",
-        "name": "gigaverb",
-        "description": "Gigaverb reverb",
-        "tags": [
-          "effect",
-          "reverb"
-        ]
-      }
+
     ]
   }

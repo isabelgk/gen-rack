@@ -6,5 +6,5 @@ void init(Plugin* p) {
     pluginInstance = p;
 
     // GENRACK: add modules here
-    p->addModel(modelGigaverb);
+    // p->addModel(modelMyModule);
 }
