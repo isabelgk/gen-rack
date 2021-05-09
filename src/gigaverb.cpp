@@ -1,14 +1,18 @@
 #include "plugin.hpp"
 #include "gigaverb.h"
+#include <array>
 
 using namespace gigaverb;
+
 
 /// Processing
 
 struct Gigaverb : Module {
 	CommonState *moduleState;
-	t_sample **inputBuffers;  // access like: buffer[input #][sample #]
+	t_sample **inputBuffers;
 	t_sample **outputBuffers;
+
+	std::array<int, 6> validBufferSizes = { 64, 128, 256, 512, 1024, 2048 };
 	int currentBufferSize = 256;
 
 	int numParams;
@@ -74,8 +78,7 @@ struct Gigaverb : Module {
 		}
 	}
 
-
-	void assureBufferSize(long bufferSize) {
+	void setBufferSize(long bufferSize) {
 		if (bufferSize > currentBufferSize) {
 			for (int i = 0; i < numInputs; i++) {
 				if (inputBuffers[i]) {
@@ -90,8 +93,9 @@ struct Gigaverb : Module {
 				}
 				outputBuffers[i] = new t_sample[bufferSize];
 			}
-			currentBufferSize = bufferSize;
 		}
+		currentBufferSize = bufferSize;
+		count = 0;
 	}
 
 
@@ -144,6 +148,15 @@ struct Gigaverb : Module {
 
 /// Main module UI
 
+struct BufferSizeMenuItem : MenuItem {
+	Gigaverb* module;
+	int bufferSize;
+	void onAction(const event::Action& e) override {
+		if (!module) return;
+		module->setBufferSize(bufferSize);
+	}
+};
+
 struct GigaverbWidget : ModuleWidget {
 	int numParams;
 	int numInputs;
@@ -193,7 +206,7 @@ struct GigaverbWidget : ModuleWidget {
 		panel = new genrack::Panel(40, 40, 40);
 		addChild(panel);
 		panel->box.size = box.size;
-		genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, gigaverb);
+		genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, "gigaverb");
 		addChild(title);
 
 		if (module) {
@@ -243,7 +256,7 @@ struct GigaverbWidget : ModuleWidget {
 			panel->box.size = box.size;
 
 			// Title text
-			genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, gigaverb);
+			genrack::Title *title = new genrack::Title(box.size.x / 2, top_margin, box.size.x, "gigaverb");
 			addChild(title);
 
 			// Screws
@@ -310,8 +323,29 @@ struct GigaverbWidget : ModuleWidget {
 
 		ModuleWidget::step();
 	}
+
+
+	void appendContextMenu(Menu* menu) override {
+		Gigaverb* module = dynamic_cast<Gigaverb*>(this->module);
+
+		// Buffer sizes selection
+		menu->addChild(new MenuSeparator());
+		MenuItem* bufferSizeLabel = new MenuItem;
+		bufferSizeLabel->disabled = true;
+		bufferSizeLabel->text = "Buffer size";
+		menu->addChild(bufferSizeLabel);
+
+		for (int i = 0; i < (int) module->validBufferSizes.size(); i++) {
+			BufferSizeMenuItem* item = new BufferSizeMenuItem;
+			item->module = module;
+			item->text = std::to_string(module->validBufferSizes[i]).c_str();
+			item->rightText = CHECKMARK(module->currentBufferSize == module->validBufferSizes[i]);
+			item->bufferSize = module->validBufferSizes[i];
+			menu->addChild(item);
+		}
+	}
 };
 
 
 /// Register the model
-Model* modelGigaverb = createModel<Gigaverb, GigaverbWidget>(gigaverb);
+Model* modelGigaverb = createModel<Gigaverb, GigaverbWidget>("gigaverb");
