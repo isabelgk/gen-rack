@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 1019.0, 468.0, 848.0, 419.0 ],
+		"rect" : [ 709.0, 486.0, 848.0, 419.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -89,7 +89,7 @@
 					"numoutlets" : 1,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "bang" ],
-					"patching_rect" : [ 431.0, 166.0, 400.0, 220.0 ],
+					"patching_rect" : [ 420.0, 166.5, 400.0, 220.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -102,6 +102,14 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "", "" ],
 					"patching_rect" : [ 249.0, 135.0, 190.0, 22.0 ],
+					"saved_object_attributes" : 					{
+						"autostart" : 1,
+						"defer" : 0,
+						"node_bin_path" : "",
+						"npm_bin_path" : "",
+						"watch" : 0
+					}
+,
 					"text" : "node.script builder.js @autostart 1"
 				}
 
@@ -714,7 +722,14 @@
  ],
 		"dependency_cache" : [ 			{
 				"name" : "path-helper.js",
-				"bootpath" : "~/dev/vcv/gen-rack/gen/projects/example",
+				"bootpath" : "~/dev/vcv/gen-rack/gen/projects/template",
+				"patcherrelativepath" : ".",
+				"type" : "TEXT",
+				"implicit" : 1
+			}
+, 			{
+				"name" : "builder.js",
+				"bootpath" : "~/dev/vcv/gen-rack/gen/projects/template",
 				"patcherrelativepath" : ".",
 				"type" : "TEXT",
 				"implicit" : 1
