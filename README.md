@@ -10,4 +10,4 @@ First, you'll want to either clone, fork, or otherwise grab a copy of this repos
 
 # License
 
-Licensed under the terms of GPL-3.
+gen-rack is licensed under the terms of GPL-3. All `gen~` code is licensed as following the header text in the generated source code.
