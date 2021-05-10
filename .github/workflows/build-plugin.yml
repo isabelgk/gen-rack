@@ -2,7 +2,7 @@ name: Build VCV Rack Plugin
 on:
   push:
     branches:
-      - main
+      - build
       - '!dev'
   release:
     types: [published, edited]
