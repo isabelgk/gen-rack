@@ -1,5 +1,7 @@
 # gen-rack
 
+GitHub mirror of [https://git.sr.ht/~isabelgk/gen-rack](https://git.sr.ht/~isabelgk/gen-rack)
+
 Export gen~ patches to VCV Rack modules.
 
 ![example](docs/img/example.png)
