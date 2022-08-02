@@ -1,12 +1,13 @@
 # gen-rack
 
+![example](docs/img/example.png)
+
 Export gen~ patches to VCV Rack modules.
 
 Check out the two-minute overview of the workflow: 
 
 [![Quickstart](https://img.youtube.com/vi/agktuKiS_Jw/0.jpg)](https://www.youtube.com/watch?v=agktuKiS_Jw)
 
-![example](docs/img/example.png)
 
 # How to use
 
