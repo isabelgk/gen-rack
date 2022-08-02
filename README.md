@@ -2,7 +2,7 @@
 
 Export gen~ patches to VCV Rack modules.
 
-Check out the two-minute overview of the worlflow: 
+Check out the two-minute overview of the workflow: 
 
 [![Quickstart](https://img.youtube.com/vi/agktuKiS_Jw/0.jpg)](https://www.youtube.com/watch?v=agktuKiS_Jw)
 
