@@ -34,24 +34,9 @@ Most of the heavy lifting is done by these scripts, so going from a `gen~` patch
 
 Requirements:
 - Max 8 (Windows or Mac)
-- VCV Development Environment (currently v1.1.16)
-  - See this [link](https://manual.vcvrack.com/Building#setting-up-your-development-environment) or below for details
+- VCV Development Environment
+  - See the official [documentation](https://vcvrack.com/manual/Building) for how to set this up
 
-## Windows
-
-The VCV build toolchain leverages `MSYS2` which aims to provide a native build environment for Windows based on open source software. For more, read [here](https://www.msys2.org/docs/what-is-msys2/).
-
-With the MSYS2 MinGW 64-bit shell, update the package manager with `pacman -Syu`. Restart the shell and install packages:
-```
-pacman -Su git wget make tar unzip zip mingw-w64-x86_64-gcc mingw-w64-x86_64-gdb mingw-w64-x86_64-cmake autoconf automake mingw-w64-x86_64-libtool mingw-w64-x86_64-jq python
-```
-
-## Mac
-
-Make sure you have [Homebrew](https://brew.sh/) installed before getting the packages:
-```
-brew install git wget cmake autoconf automake libtool jq python
-```
 
 # 1. Creating a new project
 
@@ -121,7 +106,7 @@ For any additional modules you create, you'll need to register them in the same 
 
 This is the third and final place to register the module as part of your plugin.
 
-The easiest way to see how to add modules to your plugin is to take a look at existing `plugin.json` files in the library. For example, see the `plugin.json` for the [Fundamental](https://github.com/VCVRack/Fundamental/blob/v1/plugin.json) modules.
+The easiest way to see how to add modules to your plugin is to take a look at existing `plugin.json` files in the library. For example, see the `plugin.json` for the [Fundamental](https://github.com/VCVRack/Fundamental/blob/v2/plugin.json) modules.
 
 For our example, I'll simply add `myModule` as the only module.
 
