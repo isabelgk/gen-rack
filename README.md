@@ -2,13 +2,15 @@
 
 Export gen~ patches to VCV Rack modules.
 
+Check out the two-minute overview of the worlflow: 
+
+[![Quickstart](https://img.youtube.com/vi/agktuKiS_Jw/0.jpg)](https://www.youtube.com/watch?v=agktuKiS_Jw)
+
 ![example](docs/img/example.png)
 
 # How to use
 
 First, you'll want to grab a copy of this repository (clone/download/etc). Then take a look at the [Getting Started](docs/getting-started.md) documentation for information on prerequisites and instructions on building your first gen-rack modules.
-
-[![Quickstart](https://img.youtube.com/vi/agktuKiS_Jw/0.jpg)](https://www.youtube.com/watch?v=agktuKiS_Jw)
 
 
 # License
