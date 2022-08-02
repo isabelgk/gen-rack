@@ -35,7 +35,7 @@ Most of the heavy lifting is done by these scripts, so going from a `gen~` patch
 Requirements:
 - Max 8 (Windows or Mac)
 - VCV Development Environment
-  - See the official [documentation](https://vcvrack.com/manual/Building) for how to set this up. You do not need to build Rack from scratch, just install the packages (via MSYS2 on Windows or homebrew on Mac) as needed.
+  - See the official [documentation](https://vcvrack.com/manual/Building) for how to set this up. You do not need to build Rack from scratch, just install the packages (via MSYS2 on Windows or homebrew on Mac) as needed and download a copy of the [Rack SDK](https://vcvrack.com/downloads/).
 
 
 # 1. Creating a new project
